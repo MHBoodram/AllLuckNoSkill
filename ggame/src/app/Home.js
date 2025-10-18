@@ -25,6 +25,9 @@ const Home = () => {
           <Button component={Link} to="/PlayerCreate" variant="outlined" size="large">
             Create account
           </Button>
+          <Button component={Link} to="/Game" variant= "outlined" size = "large">
+          Guest
+          </Button>
         </Box>
       </Paper>
     </Container>
