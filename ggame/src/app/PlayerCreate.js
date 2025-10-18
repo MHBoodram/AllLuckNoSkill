@@ -49,23 +49,32 @@ const PlayerCreate = () => {
     return err
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const err = validate()
     setErrors(err)
-    if (Object.keys(err).length === 0) {
-      // For now save to localStorage as a simple demo and show success
-      try {
-        const players = JSON.parse(localStorage.getItem('players') || '[]')
-        players.push({ ...form, createdAt: new Date().toISOString() })
-        localStorage.setItem('players', JSON.stringify(players))
-        setSuccess('Account created successfully!')
-        // small delay so user sees the message, then navigate home
-        setTimeout(() => navigate('/'), 900)
-      } catch (e) {
-        console.error(e)
-        setErrors({ form: 'Could not save account locally' })
+    if (Object.keys(err).length !== 0) return
+
+    setLoading(true)
+    try{
+      const res = await fetch("/api/players", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+
+      const data = await res.json()
+
+      if(!res.ok){
+        throw new Error(data.message || 'Could not create account.')
       }
+      setSuccess('Account created successfully! You can now log in.')
+
+      setTimeout(() => navigate('/'), 900)
+    }catch(e){
+      setErrors({form: e.message || 'Network error, Could not reach API.'})
+    }finally{
+      setLoading(false)
     }
   }
 
