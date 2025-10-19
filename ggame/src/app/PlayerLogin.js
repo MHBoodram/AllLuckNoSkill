@@ -1,37 +1,36 @@
 import React, { useState } from 'react'
 import {
-  Container,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  Alert,
   Box,
+  Button,
+  TextField,
+  Typography,
+  Grid,
   InputAdornment,
   IconButton,
+  Alert,
+  Paper,
   Link as MuiLink,
 } from '@mui/material'
-import {
-  Lock as LockIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-  Person as PersonIcon,
-} from '@mui/icons-material'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
+import { useNavigate, Link as RouterLink } from 'react-router-dom'
 
-export default function PlayerLogin() {
+const PlayerLogin = () => {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ identifier: '', password: '' })
+  const [form, setForm] = useState({
+    identifier: '', // can be username or email
+    password: '',
+  })
+  const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState('')
+  const [error, setError] = useState('')
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
-    setError('')
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     if (!form.identifier.trim() || !form.password) {
@@ -41,100 +40,116 @@ export default function PlayerLogin() {
 
     setLoading(true)
     try {
-      const players = JSON.parse(localStorage.getItem('players') || '[]')
-      // match by username or email
-      const user = players.find(
-        (p) => p.username === form.identifier || p.email === form.identifier
-      )
-      if (!user) {
-        setError('No account found with that username or email')
-        setLoading(false)
-        return
+      const res = await fetch('http://localhost:5000/api/player/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Invalid credentials')
       }
-      if (user.password !== form.password) {
-        setError('Incorrect password')
-        setLoading(false)
-        return
-      }
-      // success: set currentUser and navigate
-      localStorage.setItem('currentUser', JSON.stringify(user))
-      setLoading(false)
-      navigate('/')
-    } catch (e) {
-      console.error(e)
-      setError('An error occurred while logging in')
+
+      setSuccess('Login successful! Redirecting...')
+      localStorage.setItem('currentUser', JSON.stringify(data.user))
+
+      // redirect to home or dashboard
+      setTimeout(() => navigate('/'), 900)
+    } catch (err) {
+      setError(err.message || 'Network error, could not reach API.')
+    } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 6 }}>
-      <Paper sx={{ p: 3 }} elevation={3}>
-        <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-          Sign in
+    <Box sx={{ maxWidth: 600, mx: 'auto', p: 3 }}>
+      <Paper sx={{ p: { xs: 2, md: 4 } }} elevation={2}>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>
+          Player Login
         </Typography>
+
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {success}
+          </Alert>
+        )}
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit} noValidate>
-          <TextField
-            fullWidth
-            label="Username"
-            name="identifier"
-            value={form.identifier}
-            onChange={handleChange}
-            margin="normal"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <PersonIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
+        <Box component="form" noValidate onSubmit={handleSubmit}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Username or Email"
+                name="identifier"
+                value={form.identifier}
+                onChange={handleChange}
+                error={!!errors.identifier}
+                helperText={errors.identifier}
+              />
+            </Grid>
 
-          <TextField
-            fullWidth
-            label="Password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            margin="normal"
-            type={showPassword ? 'text' : 'password'}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={() => setShowPassword((s) => !s)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                error={!!errors.password}
+                helperText={errors.password}
+                type={showPassword ? 'text' : 'password'}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={() => setShowPassword((s) => !s)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+            <Grid item xs={12} sx={{ textAlign: 'right' }}>
+              <Button
+                variant="contained"
+                color="primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? 'Logging in...' : 'Login'}
+              </Button>
+            </Grid>
+          </Grid>
+
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mt: 2,
+            }}
+          >
             <MuiLink component={RouterLink} to="/PlayerCreate">
-              Create account
+              Don’t have an account? Create one
             </MuiLink>
-            <Button variant="contained" type="submit" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign in'}
-            </Button>
           </Box>
         </Box>
       </Paper>
-    </Container>
+    </Box>
   )
 }
 
+export default PlayerLogin

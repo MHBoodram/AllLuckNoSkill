@@ -22,20 +22,16 @@ function validateEmail(email) {
 const PlayerCreate = () => {
   const navigate = useNavigate()
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    username: "",
-    email: "",
-    password: "",
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: '',
+    password: '',
   })
   const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState('')
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
 
   const validate = () => {
     const err = {}
@@ -49,6 +45,10 @@ const PlayerCreate = () => {
     return err
   }
 
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     const err = validate()
@@ -56,24 +56,31 @@ const PlayerCreate = () => {
     if (Object.keys(err).length !== 0) return
 
     setLoading(true)
-    try{
-      const res = await fetch("/api/players", {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          firstName: form.firstName,
+          lastName: form.lastName,
+          username: form.username,
+          email: form.email,
+          password: form.password,
+        }),
       })
 
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
 
-      if(!res.ok){
+      if (!res.ok) {
         throw new Error(data.message || 'Could not create account.')
       }
-      setSuccess('Account created successfully! You can now log in.')
 
-      setTimeout(() => navigate('/'), 900)
-    }catch(e){
-      setErrors({form: e.message || 'Network error, Could not reach API.'})
-    }finally{
+      setSuccess('Account created successfully! You can now log in.')
+      // small delay so the user sees the success banner
+      setTimeout(() => navigate('/PlayerLogin'), 900)
+    } catch (e2) {
+      setErrors({ form: e2.message || 'Network error, Could not reach API.' })
+    } finally {
       setLoading(false)
     }
   }
@@ -109,6 +116,7 @@ const PlayerCreate = () => {
                 helperText={errors.firstName}
               />
             </Grid>
+
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -173,16 +181,28 @@ const PlayerCreate = () => {
             </Grid>
 
             <Grid item xs={12} sx={{ textAlign: 'right' }}>
-              <Button variant="contained" color="primary" type="submit">
-                Create account
+              <Button
+                variant="contained"
+                color="primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? 'Creating...' : 'Create account'}
               </Button>
             </Grid>
           </Grid>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mt: 2,
+            }}
+          >
             <MuiLink component={RouterLink} to="/PlayerLogin">
               Already have an account? Log in
             </MuiLink>
-            
           </Box>
         </Box>
       </Paper>
