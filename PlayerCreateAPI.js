@@ -20,11 +20,11 @@ export default async function handler(req, res) {
 
   // Expecting these from the PlayerCreate form
   const {
-    firstName,  // maps to First_name
-    lastName,   // maps to Last_name
-    username,   // maps to username
-    email,      // maps to email
-    password,   // maps to password (plaintext per your schema)
+    firstName,  
+    lastName,   
+    username,   
+    email,      
+    password,   
   } = req.body || {};
 
   // Basic validation (mirror your frontend expectations)
@@ -37,10 +37,10 @@ export default async function handler(req, res) {
     // Connect — keep the same “format” (env-based) you used
     // If you don’t want env vars, you can hardcode these here.
     connection = await mysql.createConnection({
-      host: process.env.DBHOST || '127.0.0.1',
-      user: process.env.DBUSER || 'root',
-      password: process.env.DBPASS || 'NumberSixNumber777',
-      database: process.env.DBNAME || 'ALNSdb',
+      host: process.env.DBHOST,
+      user: process.env.DBUSER,
+      password: process.env.DBPASS,
+      database: process.env.DBNAME,
       port: process.env.DBPORT ? Number(process.env.DBPORT) : 3306,
       // ssl: process.env.DB_SSL_CA ? { ca: Buffer.from(process.env.DB_SSL_CA, 'base64') } : false,
       connectTimeout: 5000,
@@ -55,10 +55,7 @@ export default async function handler(req, res) {
       return res.status(409).json({ success: false, error: 'Email or username already exists' });
     }
 
-    // If you upgrade the column and want to hash, do it here:
-    // const hashed = await bcrypt.hash(password, 10);
-
-    // Insert the new player (column names exactly as given)
+    
     const [result] = await connection.execute(
       `INSERT INTO player (username, email, password, First_name, Last_name)
        VALUES (?, ?, ?, ?, ?)`,
